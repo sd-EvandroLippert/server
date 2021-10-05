@@ -1,6 +1,9 @@
 #![allow(unused)]
 
 use std::net::TcpListener;
+use std::io::Read;
+use crate::http::Request;
+use std::convert::TryFrom;
 
 // Em Rust a criação de classes é diferente;
 // Struct serve para passar as variáveis;
@@ -38,8 +41,26 @@ impl Server {
             // que é printar a mensagem na tela
             match listener.accept() {
 
-                Ok((stream, address)) => {
-                    println!("Ok!")
+                Ok((mut stream, address)) => {
+                    // Para ler as informações da conexão, criamos um array que armazenará até 1024 bytes de dados
+                    // Esse tamnho foi proposto só para teste, em um servidor real, deveríamos alocar um espaço maior
+                    // para evitar perder dados.
+
+                    let mut buffer = [0; 1024];
+                    
+                    // Assim, colocamos um pointer para o buffer, informando que ele pode ser alterado pelo stream.read()
+
+                    match stream.read(&mut buffer) {
+                        Ok(_) => {
+                            println!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                            // A função try_from espera receber um array [u8], porém ela está recebendo um [u8, 1024], por isso temos que fazer um slice dele
+                            match Request::try_from(&buffer[..]){
+                                Ok(_) => {},
+                                Err(e) => println!("{}", e)
+                            } 
+                        }
+                        Err(e) => println!("Failed to read from connection: {}", e)
+                    }
                 },
 
                 Err(e) => println!("Failed to estabilish a connection: {}", e)
