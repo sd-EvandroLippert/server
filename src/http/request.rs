@@ -7,24 +7,33 @@ use std::fmt::{Display, Result as FmtResult, Formatter, Debug};
 use std::str;
 use std::str::Utf8Error;
 
-pub struct Request {
+/*
+Lifetimes:
+Servem para especificar que determinadas referências estão relacionadas
+e devem compartilhar o mesmo lifetime.
+
+Caso não seja definido, uma referência pode ser deletada, mesmo que outra tenha de usá-la
+
+eles são definidos pelo 'nome_do_lifetime
+*/
+pub struct Request<'buf> {
     
 
-    path: String,
-    query_string: Option<String>,  // Option<> Serve para dizer que esse parâmetro é opcional
+    path: &'buf str,
+    query_string: Option<&'buf str>,  // Option<> Serve para dizer que esse parâmetro é opcional
     method: Method,
 }
 
-impl Request {
+impl<'buf> Request<'buf> {
     fn from_byte_array(buf: &[u8]) -> Result<Self, String> {
         unimplemented!()
     }
 }
 
-impl TryFrom<&[u8]> for Request {
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
     
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error>{
+    fn try_from(buf: &'buf [u8]) -> Result<Self, Self::Error>{
         // Aqui ele tenta transformar em string o que recebe do request;
         // Caso não consiga ele ativará essa função aqui 'impl From<Utf8Error> for ParseError{}'
         // O ponto de interrogação, permite que as duas opções sejam realizadas e que o retorno seja desembrulhado
@@ -47,7 +56,11 @@ impl TryFrom<&[u8]> for Request {
             path = &path[..i];
         }
 
-        unimplemented!()
+        Ok(Self {
+            path: path,
+            query_string,
+            method
+        })
     }
 }
 
